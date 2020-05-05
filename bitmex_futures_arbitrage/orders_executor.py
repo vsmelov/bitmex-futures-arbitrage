@@ -51,8 +51,7 @@ class PaperOrdersExecutor:
         for symbol, direction2order in self.symbol2direction2order.items():
             for direction, order in list(direction2order.items()):  # copy to avoid iteration over mutating structure
                 if (symbol, direction) not in desired_limit_orders_symbol_direction:
-                    logger.info(f'CANCEL limit order {order}')
-                    del direction2order[direction]
+                    self.cancel_limit_order(order)
 
     def execute_market_order(self, order: Order, quotes: Dict[str, Quote]):
         """ immediately execute market orders using best bid/ask """
@@ -90,7 +89,20 @@ class PaperOrdersExecutor:
             if placed_order.price != order.price or placed_order.size != order.size:
                 placed_order.price = order.price
                 placed_order.size = order.size
-                logger.info(f'EDIT order {placed_order}')
-        else:
-            logger.info(f'PLACE order {order}')
-            self.symbol2direction2order[order.symbol][order.direction] = order
+                if placed_order.price <= 0:
+                    self.cancel_limit_order(placed_order)
+                else:
+                    self.edit_limit_order(placed_order)
+        elif order.price > 0:
+            self.place_limit_order(order)
+
+    def place_limit_order(self, order: Order):
+        logger.info(f'PLACE order {order}')
+        self.symbol2direction2order[order.symbol][order.direction] = order
+
+    def edit_limit_order(self, order: Order):
+        logger.info(f'EDIT order {order}')
+
+    def cancel_limit_order(self, order: Order):
+        logger.info(f'CANCEL order {order}')
+        del self.symbol2direction2order[order.symbol][order.direction]

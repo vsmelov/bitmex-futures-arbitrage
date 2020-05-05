@@ -27,8 +27,9 @@ class Manager:
     def on_quotes(self, quotes: Dict[str, Quote]):
         if not self.check_ok(quotes):
             return
-        self.estimates.on_quotes(quotes)
+        logger.debug(f'{quotes=}')
         self.orders_executor.orders_execution_on_quotes(quotes)
+        self.estimates.on_quotes(quotes)
         state = State(
             symbol2position=self.orders_executor.symbol2position,
             symbol2quote=quotes,
